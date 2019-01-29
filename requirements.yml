@@ -17,6 +17,9 @@ dependencies:
   - python-kubernetes>=4.0.0
   - docker-py>=3.5.0
   - pip
+  - urllib
+  - tenacity
+  - ujson
 
   # Documentation Requirements
   - sphinx_rtd_theme
