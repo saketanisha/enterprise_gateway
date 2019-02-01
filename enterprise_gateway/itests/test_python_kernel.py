@@ -106,6 +106,50 @@ class PythonKernelBaseYarnTestCase(PythonKernelBaseTestCase):
         result = self.kernel.execute(pi_code)
         self.assertRegexpMatches(result, 'Pi is roughly 3.14*')
 
+class PythonKernelBaseMesosTestCase(PythonKernelBaseTestCase):
+    """
+    Python related tests cases common to Spark on Mesos
+    """
+
+    def test_get_application_id(self):
+        result = self.kernel.execute("sc.getConf().get('spark.app.id')")
+        print("Here is the application id " + result)
+        self.assertRegexpMatches(result, '[0-9a-f]{12}4[0-9a-f]{3}[89ab][0-9a-f]{15}\Z')
+
+    def test_get_deploy_mode(self):
+        result = self.kernel.execute("sc.getConf().get('spark.submit.deployMode')")
+        print("result of test_get_deploy_mode "+ result)
+        self.assertRegexpMatches(result, '(cluster|client)')
+
+    def test_get_hostname(self):
+        result = self.kernel.execute("import subprocess; subprocess.check_output(['hostname'])")
+        self.assertRegexpMatches(result, os.environ['ITEST_HOSTNAME_PREFIX'] + "*")
+
+    def test_get_resource_manager(self):
+        result = self.kernel.execute("sc.getConf().get('spark.master')")
+        self.assertRegexpMatches(result, 'yarn.*')
+
+    def test_get_spark_version(self):
+        result = self.kernel.execute("sc.version")
+        self.assertRegexpMatches(result, '2.4.*')
+
+    def test_run_pi_example(self):
+        # Build the example code...
+        pi_code = list()
+        pi_code.append("import random\n")
+        pi_code.append("from operator import add\n")
+        pi_code.append("partitions = 20\n")
+        pi_code.append("n = 100000 * partitions\n")
+        pi_code.append("def f(_):\n")
+        pi_code.append("    x = random() * 2 - 1\n")
+        pi_code.append("    y = random() * 2 - 1\n")
+        pi_code.append("    return 1 if x ** 2 + y ** 2 <= 1 else 0\n")
+        pi_code.append("count = sc.parallelize(range(1, n + 1), partitions).map(f).reduce(add)\n")
+        pi_code.append("print(\"Pi is roughly %f\" % (4.0 * count / n))\n")
+        result = self.kernel.execute(pi_code)
+        self.assertRegexpMatches(result, 'Pi is roughly 3.14*')
+
+
 class TestPythonKernelLocal(unittest.TestCase, PythonKernelBaseTestCase):
     KERNELSPEC = os.getenv("PYTHON_KERNEL_LOCAL_NAME", "python2")
 
@@ -192,6 +236,53 @@ class TestPythonKernelCluster(unittest.TestCase, PythonKernelBaseYarnTestCase):
         # shutdown environment
         cls.gatewayClient.shutdown_kernel(cls.kernel)
 
+
+
+class TestPythonMesosKernelClient(unittest.TestCase, PythonKernelBaseMesosTestCase):
+    KERNELSPEC = os.getenv("PYTHON_KERNEL_CLIENT_NAME", "spark_python_mesos_client")
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestPythonMesosKernelClient, cls).setUpClass()
+        print('>>>')
+        print('Starting Python kernel using {} kernelspec'.format(cls.KERNELSPEC))
+
+        # initialize environment
+        cls.gatewayClient = GatewayClient()
+        print("....")
+        print(cls.gatewayClient.http_api_endpoint)
+        print(cls.KERNELSPEC)
+        cls.kernel = cls.gatewayClient.start_kernel(cls.KERNELSPEC)
+
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestPythonMesosKernelClient, cls).tearDownClass()
+        print('Shutting down Python kernel using {} kernelspec'.format(cls.KERNELSPEC))
+
+        # shutdown environment
+        cls.gatewayClient.shutdown_kernel(cls.kernel)
+
+
+class TestPythonMesosKernelCluster(unittest.TestCase, PythonKernelBaseMesosTestCase):
+    KERNELSPEC = os.getenv("PYTHON_KERNEL_CLUSTER_NAME", "spark_python_mesos_cluster")
+
+    @classmethod
+    def setUpClass(cls):
+        super(TestPythonMesosKernelCluster, cls).setUpClass()
+        print('>>>')
+        print('Starting Python kernel using {} kernelspec'.format(cls.KERNELSPEC))
+
+        # initialize environment
+        cls.gatewayClient = GatewayClient()
+        cls.kernel = cls.gatewayClient.start_kernel(cls.KERNELSPEC)
+
+    @classmethod
+    def tearDownClass(cls):
+        super(TestPythonMesosKernelCluster, cls).tearDownClass()
+        print('Shutting down Python kernel using {} kernelspec'.format(cls.KERNELSPEC))
+        # shutdown environment
+        cls.gatewayClient.shutdown_kernel(cls.kernel)
 
 if __name__ == '__main__':
     unittest.main()

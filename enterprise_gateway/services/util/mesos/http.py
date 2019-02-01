@@ -45,6 +45,47 @@ REQUEST_GZIP_HEADERS = {'Accept-Encoding': 'gzip'}
 
 BASE_HEADERS = {}
 
+ACTIVE = "ACTIVE"
+COMPLETED = "COMPLETED"
+FRAMEWORK_STATES = { ACTIVE, COMPLETED}
+
+GET_HEALTH= "GET_HEALTH"
+GET_FLAGS = "GET_FLAGS"
+GET_VERSION = "GET_VERSION"
+GET_METRICS = "GET_METRICS"
+GET_LOGGING_LEVEL = "GET_LOGGING_LEVEL"
+SET_LOGGING_LEVEL = "SET_LOGGING_LEVEL"
+LIST_FILES = "LIST_FILES"
+READ_FILE = "READ_FILE"
+GET_STATE = "GET_STATE"
+GET_AGENTS = "GET_AGENTS"
+GET_FRAMEWORKS = "GET_FRAMEWORKS"
+GET_EXECUTORS = "GET_EXECUTORS"
+GET_TASKS = "GET_TASKS"
+GET_ROLES = "GET_ROLES"
+GET_WEIGHTS = "GET_WEIGHTS"
+UPDATE_WEIGHTS = "UPDATE_WEIGHTS"
+GET_MASTER = "GET_MASTER"
+RESERVE_RESOURCES = "RESERVER_RESOURCES"
+UNRESERVE_RESOURCES = "UNRESERVE_RESOURCES"
+CREATE_VOLUMES = "CREATE_VOLUMES"
+DESTROY_VOLUMES = "DESTROY_VOLUMES"
+GROW_VOLUMES = "GROW_VOLUMES"
+SHRINK_VOLUMES = "SHRINK_VOLUMES"
+GET_MAINTENANCE_STATUS = "GET_MAINTENANCE_STATUS"
+GET_MAINTENANCE_SCHEDULE = "GET_MAINTENANCE_SCHEDULE"
+UPDATE_MAINTENANCE_SCHEDULE = "UPDATE_MAINTENANCE_SCHEDULE"
+START_MAINTENANCE = "START_MAINTENANCE"
+STOP_MAINTENANCE = "STOP_MAINTENANCE"
+GET_QUOTA = "GET_QUOTA"
+SET_QUOTA = "SET_QUOTA"
+REMOVE_QUOTA = "REMOVE_QUOTA"
+MARK_AGENT_GONE = "MARK_AGENT_GONE"
+SUBSCRIBE = "SUBSCRIBE"
+MASTER_CALLS = {
+
+}
+
 DEFAULT_TIMEOUT = 30
 DEFAULT_AUTH = None
 DEFAULT_USE_GZIP_ENCODING = True
@@ -384,3 +425,40 @@ class Resource(object):
                                  payload=payload,
                                  decoder=decoder,
                                  params=params)
+
+
+
+
+    def get_frameworks(self):
+        """
+        Returns tuple (list,list). First entry is list of framework IDs for all active frameworks. Second entry
+        is list of framework IDs for all copleted frameworks
+        """
+        data = self._create_post_data(GET_FRAMEWORKS)
+        response = self.post_json(payload=data)
+
+        ## list of active framework IDs
+        active = response['get_frameworks']['frameworks']
+        active_frameworks = [framework['framework_info']['id']['value'] for framework in active]
+
+        ## list of completed framework IDs
+        completed = response['get_frameworks']['completed_frameworks']
+        completed_frameworks = [framework['framework_info']['id']['value'] for framework in completed]
+
+        return active_frameworks,completed_frameworks
+
+
+    def get_framework_state(self,framework_id):
+        """
+        Returns state (either ACTIVE or COMPLETED) for a framework for the given framework_id
+        """
+        active_frameworks,completed_frameworks = self.get_frameworks()
+        if framework_id in active_frameworks:
+            return ACTIVE
+        elif framework_id in completed_frameworks:
+            return COMPLETED
+
+
+    def _create_post_data(self, type):
+        return ujson.dumps({"type":type})
+

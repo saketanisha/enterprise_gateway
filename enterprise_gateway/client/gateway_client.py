@@ -41,6 +41,8 @@ class GatewayClient:
                      'env': {'KERNEL_USERNAME': username,
                              'KERNEL_LAUNCH_TIMEOUT': GatewayClient.KERNEL_LAUNCH_TIMEOUT} }
 
+        print("here")
+        print(self.http_api_endpoint)
         response = requests.post(self.http_api_endpoint, data=json_encode(json_data))
         if response.status_code == 201:
             json_data = response.json()

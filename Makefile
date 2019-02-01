@@ -175,3 +175,7 @@ itest-docker-prep:
 	@echo "Starting enterprise-gateway swarm service (run \`docker service logs itest-docker\` to see service log)..."
 	@KG_PORT=${ITEST_DOCKER_PORT} EG_NAME=itest-docker etc/docker/enterprise-gateway-swarm.sh
 	@(r="1"; attempts=0; while [ "$$r" == "1" -a $$attempts -lt $(PREP_TIMEOUT) ]; do echo "Waiting for enterprise-gateway to start..."; sleep 2; ((attempts++)); docker service logs itest-docker |grep --regexp "Jupyter Enterprise Gateway .* is available at http"; r=$$?; done; if [ $$attempts -ge $(PREP_TIMEOUT) ]; then echo "Wait for startup timed out!"; exit 1; fi;)
+
+# test for mesos
+itest-mesos:
+	nosetests -v enterprise_gateway.itests.test_python_kernel.TestPythonMesosKernelClient
