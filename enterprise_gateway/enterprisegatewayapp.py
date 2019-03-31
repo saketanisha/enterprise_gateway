@@ -86,6 +86,25 @@ class EnterpriseGatewayApp(KernelGatewayApp):
     def conductor_endpoint_default(self):
         return os.getenv(self.conductor_endpoint_env, self.conductor_endpoint_default_value)
 
+    # Mesos endpoint
+    mesos_endpoint_env = 'EG_MESOS_ENDPOINT'
+    mesos_dispatcher_env = 'EG_MESOS_SPARK_DISPATCHER_ENDPOINT'
+    mesos_endpoint_default_value = 'http://localhost:5050'
+    mesos_spark_dispatcher_endpoint_default_value = 'http://localhost:7077'
+    mesos_endpoint = Unicode(mesos_endpoint_default_value, config=True,
+                             help="""The http url for accessing the Mesos Master. (EG_MESOS_ENDPOINT env var)""")
+    mesos_spark_dispatcher_endpoint = Unicode(mesos_spark_dispatcher_endpoint_default_value, config=True,
+                                              help="""The http url for accessing the Mesos Spark Dispatcher.
+                                              (EG_MESOS_SPARK_DISPATCHER_ENDPOINT env var)""")
+
+    @default('mesos_endpoint')
+    def mesos_endpoint_default(self):
+        return os.getenv(self.mesos_endpoint_env, self.mesos_endpoint_default_value)
+
+    @default('mesos_spark_dispatcher_endpoint')
+    def mesos_spark_dispatcher_endpoint_default(self):
+        return os.getenv(self.mesos_spark_dispatcher_endpoint_env, self.mesos_spark_dispatcher_endpoint_default_value)
+
     _log_formatter_cls = LogFormatter
 
     @default('log_format')

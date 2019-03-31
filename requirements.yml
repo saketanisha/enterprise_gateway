@@ -17,12 +17,15 @@ dependencies:
   - python-kubernetes>=4.0.0
   - docker-py>=3.5.0
   - pip
+  - tenacity>=5.0.3
+  - ujson>=1.35
 
   # Test Requirements
   - nose
   - mock
   - websocket-client
   - pytest
+  - parameterized>=0.6.1
 
   # Code Style
   - flake8
