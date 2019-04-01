@@ -10,12 +10,6 @@ import ujson
 import unittest
 from parameterized import parameterized
 
-try:
-    from unittest.mock import Mock, MagicMock
-except ImportError:
-    # Python 2.7: use backport
-    from mock import Mock, MagicMock
-
 from enterprise_gateway.util.mesos import http
 
 SomeModel = namedtuple('SomeModel', ['some'])

@@ -55,8 +55,8 @@ dev: ## Make a server in jupyter_websocket mode
 docs: ## Make HTML documentation
 	$(SA) $(ENV) && make -C docs html
 
-kernelspecs:  kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker kernel_image_files ## Create archives with sample kernelspecs
-kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker kernel_image_files:
+kernelspecs:  kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker kernel_image_files kernelspecs_mesos ## Create archives with sample kernelspecs
+kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker kernel_image_files kernelspecs_mesos:
 	make VERSION=$(VERSION) TAG=$(TAG) -C  etc $@
 
 install: ## Make a conda env with dist/*.whl and dist/*.tar.gz installed
@@ -125,7 +125,7 @@ publish-images: ## Push docker images to docker hub
 
 # itest should have these targets up to date: bdist kernelspecs docker-enterprise-gateway
 
-itest: itest-docker itest-yarn
+itest: itest-docker itest-yarn itest-mesos
 
 # itest configurable settings
 # indicates two things:
@@ -193,3 +193,29 @@ itest-docker-prep:
 	@echo "Starting enterprise-gateway swarm service (run \`docker service logs itest-docker\` to see service log)..."
 	@KG_PORT=${ITEST_DOCKER_PORT} EG_NAME=itest-docker etc/docker/enterprise-gateway-swarm.sh
 	@(r="1"; attempts=0; while [ "$$r" == "1" -a $$attempts -lt $(PREP_TIMEOUT) ]; do echo "Waiting for enterprise-gateway to start..."; sleep 2; ((attempts++)); docker service logs itest-docker |grep --regexp "Jupyter Enterprise Gateway .* is available at http"; r=$$?; done; if [ $$attempts -ge $(PREP_TIMEOUT) ]; then echo "Wait for startup timed out!"; exit 1; fi;)
+
+ITEST_MESOS_PORT?=5050
+ITEST_MESOS_HOST?=localhost:$(ITEST_MESOS_PORT)
+ITEST_MESOS_TESTS?=enterprise_gateway.itests
+
+ITEST_KERNEL_LAUNCH_TIMEOUT=90
+
+LOG_LEVEL=INFO
+
+itest-mesos-debug: ## Run integration tests (optionally) against docker demo (Mesos) container with print statements
+	make LOG_LEVEL=DEBUG TEST_DEBUG_OPTS="--nocapture --nologcapture --logging-level=10" itest-mesos
+
+PREP_ITEST_MESOS?=1
+itest-mesos: ## Run integration tests (optionally) against docker demo (Mesos) container
+ifeq (1, $(PREP_ITEST_MESOS))
+	make itest-mesos-prep
+endif
+	($(SA) $(ENV) && GATEWAY_HOST=$(ITEST_MESOS_HOST) LOG_LEVEL=$(LOG_LEVEL) KERNEL_USERNAME=$(ITEST_USER) KERNEL_LAUNCH_TIMEOUT=$(ITEST_KERNEL_LAUNCH_TIMEOUT) ITEST_HOSTNAME_PREFIX=$(ITEST_HOSTNAME_PREFIX) nosetests -v $(TEST_DEBUG_OPTS) $(ITEST_MESOS_TESTS))
+	@echo "Run \`docker logs itest-mesos\` to see enterprise-gateway log."
+
+PREP_TIMEOUT?=60
+itest-mesos-prep:
+	@-docker rm -f itest-mesos >> /dev/null
+	@echo "Starting enterprise-gateway container (run \`docker logs itest-mesos\` to see container log)..."
+	@-docker run -itd -p $(ITEST_MESOS_PORT):$(ITEST_MESOS_PORT) -p 5050:5050 -p 7077:7077 -h itest-mesos --name itest-mesos -v `pwd`/enterprise_gateway/itests:/tmp/byok elyra/enterprise-gateway-demo:$(TAG) --gateway
+	@(r="1"; attempts=0; while [ "$$r" == "1" -a $$attempts -lt $(PREP_TIMEOUT) ]; do echo "Waiting for enterprise-gateway to start..."; sleep 2; ((attempts++)); docker logs itest-mesos |grep --regexp "Jupyter Enterprise Gateway .* is available at http"; r=$$?; done; if [ $$attempts -ge $(PREP_TIMEOUT) ]; then echo "Wait for startup timed out!"; exit 1; fi;)

@@ -3,7 +3,7 @@
 
 .PHONY: help clean clean-images clean-enterprise-gateway clean-enterprise-gateway-demo clean-nb2kg clean-demo-base \
     clean-kernel-images clean-py clean-tf-py clean-tf-gpu-py clean-r clean-spark-r clean-scala toree-launcher \
-    kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker 
+    kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker kernelspecs_mesos
 
 SA:=source activate
 ENV:=enterprise-gateway-dev
@@ -25,7 +25,7 @@ clean: ## Make a clean source tree
 # Kernelspec build section *************************************************
 #
 
-KERNELSPECS := kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker
+KERNELSPECS := kernelspecs_all kernelspecs_yarn kernelspecs_conductor kernelspecs_kubernetes kernelspecs_docker kernelspecs_mesos
 kernelspecs: $(KERNELSPECS) kernel_image_files
 
 FILE_kernelspecs_all:=../dist/jupyter_enterprise_gateway_kernelspecs-$(VERSION).tar.gz
@@ -33,6 +33,7 @@ FILE_kernelspecs_yarn:=../dist/jupyter_enterprise_gateway_kernelspecs_yarn-$(VER
 FILE_kernelspecs_conductor:=../dist/jupyter_enterprise_gateway_kernelspecs_conductor-$(VERSION).tar.gz
 FILE_kernelspecs_kubernetes:=../dist/jupyter_enterprise_gateway_kernelspecs_kubernetes-$(VERSION).tar.gz
 FILE_kernelspecs_docker:=../dist/jupyter_enterprise_gateway_kernelspecs_docker-$(VERSION).tar.gz
+FILE_kernelspecs_mesos:=../dist/jupyter_enterprise_gateway_kernelspecs_mesos-$(VERSION).tar.gz
 
 FILES_kernelspecs_all:=$(shell find kernel-launchers kernelspecs -type f -name '*')
 
@@ -49,7 +50,7 @@ TOREE_LAUNCHER_FILES:=$(shell find kernel-launchers/scala/toree-launcher/src -ty
 	@echo ../build/kernelspecs/dask_python_* | xargs -t -n 1 cp -r kernel-launchers/python/scripts
 	@echo ../build/kernelspecs/spark_python_{conductor*,yarn*} | xargs -t -n 1 cp -r kernel-launchers/python/scripts
 	@echo ../build/kernelspecs/spark_R_{conductor*,yarn*} | xargs -t -n 1 cp -r kernel-launchers/R/scripts
-	@echo ../build/kernelspecs/spark_scala_{conductor*,yarn*} | xargs -t -n 1 cp -r kernel-launchers/scala/lib
+	@echo ../build/kernelspecs/spark_scala_{conductor*,yarn*,mesos*} | xargs -t -n 1 cp -r kernel-launchers/scala/lib
 	# Container-based kernelspecs just get the container launchers
 	@echo ../build/kernelspecs/{python,R,scala,python_tf,python_tf_gpu}_kubernetes | xargs -t -n 1 cp -r kernel-launchers/kubernetes/*
 	@echo ../build/kernelspecs/{python,R,scala,python_tf,python_tf_gpu}_docker | xargs -t -n 1 cp -r kernel-launchers/docker/*
@@ -68,6 +69,7 @@ PATTERN_kernelspecs_yarn := *_yarn_*
 PATTERN_kernelspecs_conductor := *_conductor_*
 PATTERN_kernelspecs_kubernetes := *_kubernetes
 PATTERN_kernelspecs_docker := *_docker
+PATTERN_kernelspecs_mesos := *_mesos_*
 
 define BUILD_KERNELSPEC
 $1: $$(FILE_$1)

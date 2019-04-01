@@ -50,7 +50,7 @@ ACTIVE = "ACTIVE"
 COMPLETED = "COMPLETED"
 FRAMEWORK_STATES = {ACTIVE, COMPLETED}
 
-GET_HEALTH= "GET_HEALTH"
+GET_HEALTH = "GET_HEALTH"
 GET_FLAGS = "GET_FLAGS"
 GET_VERSION = "GET_VERSION"
 GET_METRICS = "GET_METRICS"
@@ -434,7 +434,7 @@ class Resource(object):
         completed = response['get_frameworks']['completed_frameworks']
         completed_frameworks = [framework['framework_info']['id']['value'] for framework in completed]
 
-        return active_frameworks,completed_frameworks
+        return active_frameworks, completed_frameworks
 
     def get_framework_state(self, framework_id):
         """
